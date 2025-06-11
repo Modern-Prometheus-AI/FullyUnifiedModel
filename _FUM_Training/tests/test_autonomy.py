@@ -251,8 +251,8 @@ class TestSIEAutonomy(unittest.TestCase):
         def spy_stdp_update(*args, **kwargs):
             nonlocal received_modulated_reward
             stdp_calls['update'] += 1
-            # The reward signal passed here should be eta_eff * total_reward
-            received_modulated_reward = kwargs.get('reward_signal', None)
+            # The total_reward passed here should already be eta_eff * total_reward
+            received_modulated_reward = kwargs.get('total_reward', None)
             return original_stdp_update(*args, **kwargs)
 
         model.stdp_handler.update = spy_stdp_update

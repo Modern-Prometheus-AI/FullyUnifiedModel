@@ -135,11 +135,10 @@ class TestResonanceEnhancedSTDP(unittest.TestCase):
         self.assertGreater(updated_weights_pos[0, 0].item(), weights_before[0, 0].item())
         self.assertLess(updated_weights_pos[1, 1].item(), weights_before[1, 1].item())
 
-        # Test negative reward signal (should flip the effect of eligibility trace)
-        # Note: The current implementation uses reward_signal directly, which already
-        # incorporates eta *and* the reward sign/modulation. A positive reward_signal
-        # always reinforces the eligibility trace direction.
-        # Test negative reward signal
+        # Test negative reward value (should flip the effect of eligibility trace)
+        # Note: The implementation uses the total_reward argument directly after
+        # modulation. A positive total_reward always reinforces the eligibility
+        # trace direction. Here we test a negative value.
         total_reward_neg = -1.0 # Example negative total reward
         updated_weights_neg = self.stdp_handler.update(
             torch.zeros_like(self.stdp_handler.pre_trace).bool(),
