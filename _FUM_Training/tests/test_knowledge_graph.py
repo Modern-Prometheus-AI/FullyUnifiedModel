@@ -95,8 +95,8 @@ class TestKnowledgeGraphHints(unittest.TestCase):
         print("\nApplying STDP updates with hints...")
         for i in range(num_updates):
             # Apply STDP with hints and positive reward
-            # We use a fixed positive reward signal directly for simplicity, bypassing SIE calculation
-            # The reward_signal passed to stdp_handler.update should be eta_eff * total_reward
+            # We use a fixed positive reward directly for simplicity, bypassing SIE calculation
+            # The total_reward passed to stdp_handler.update should be eta_eff * total_reward
             # Here, we simulate a positive total_reward and mod_factor=0 for simplicity
             # So, modulated_reward_signal = base_eta * (1.0 + 0.0) * 1.0 = base_eta
             base_eta = self.mock_config['stdp_params']['eta']
@@ -120,7 +120,7 @@ class TestKnowledgeGraphHints(unittest.TestCase):
                 post_spikes_t=post_spikes,
                 weights=model.weights,
                 plv=0.5, # Assume neutral PLV
-                reward_signal=simulated_modulated_reward, # Pass the simulated modulated reward
+                total_reward=simulated_modulated_reward,  # Pass the simulated modulated reward
                 hints=hints,
                 hint_factor=0.1 # Use a noticeable hint factor
             )
@@ -148,19 +148,23 @@ class TestKnowledgeGraphHints(unittest.TestCase):
         pre_spikes[self.group2_indices[0]] = True # Neuron 3 fires
         post_spikes[self.group1_indices[0]] = True # Neuron 0 fires
         for _ in range(num_updates):
-             # Manually update traces
-             model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace
-             model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
-             model.stdp_handler.pre_trace[pre_spikes] = 1.0
-             model.stdp_handler.post_trace[post_spikes] = 1.0
-             delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
-             delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
-             delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
-             current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
-             model.stdp_handler.eligibility_traces *= current_gamma
-             model.stdp_handler.eligibility_traces += delta_eligibility
-             # Apply update
-             model.weights = model.stdp_handler.update(pre_spikes, post_spikes, model.weights, 0.5, simulated_modulated_reward, hints, 0.1)
+            # Manually update traces
+            model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace
+            model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
+            model.stdp_handler.pre_trace[pre_spikes] = 1.0
+            model.stdp_handler.post_trace[post_spikes] = 1.0
+            delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
+            delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
+            delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
+            current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
+            model.stdp_handler.eligibility_traces *= current_gamma
+            model.stdp_handler.eligibility_traces += delta_eligibility
+            # Apply update
+            model.weights = model.stdp_handler.update(
+                pre_spikes, post_spikes, model.weights, 0.5,
+                total_reward=simulated_modulated_reward,
+                hints=hints, hint_factor=0.1
+            )
 
         self.assertGreater(model.weights[3, 0].item(), initial_weights[3, 0].item() + 0.005, # Expect some potentiation
                            "Weight [3,0] (smaller positive hint) did not potentiate.")
@@ -175,20 +179,22 @@ class TestKnowledgeGraphHints(unittest.TestCase):
         post_spikes[self.other_indices[1]] = True # Neuron 7 fires
         baseline_weight_change = 0.0
         for _ in range(num_updates):
-             # Manually update traces
-             model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace
-             model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
-             model.stdp_handler.pre_trace[pre_spikes] = 1.0
-             model.stdp_handler.post_trace[post_spikes] = 1.0
-             delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
-             delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
-             delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
-             current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
-             model.stdp_handler.eligibility_traces *= current_gamma
-             model.stdp_handler.eligibility_traces += delta_eligibility
-             # Apply update WITHOUT hints
-             model.weights = model.stdp_handler.update(pre_spikes, post_spikes, model.weights, 0.5, simulated_modulated_reward, hints=None) # NO HINTS
-             if _ == num_updates - 1: baseline_weight_change = model.weights[6, 7].item()
+            # Manually update traces
+            model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace
+            model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
+            model.stdp_handler.pre_trace[pre_spikes] = 1.0
+            model.stdp_handler.post_trace[post_spikes] = 1.0
+            delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
+            delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
+            delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
+            current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
+            model.stdp_handler.eligibility_traces *= current_gamma
+            model.stdp_handler.eligibility_traces += delta_eligibility
+            # Apply update WITHOUT hints
+            model.weights = model.stdp_handler.update(
+                pre_spikes, post_spikes, model.weights, 0.5,
+                total_reward=simulated_modulated_reward, hints=None)
+            if _ == num_updates - 1: baseline_weight_change = model.weights[6, 7].item()
 
         self.assertGreater(baseline_weight_change, initial_weights[6, 7].item(),
                            "Weight [6,7] (no hint) did not show baseline potentiation.")
@@ -199,15 +205,18 @@ class TestKnowledgeGraphHints(unittest.TestCase):
         pre_spikes[self.group1_indices[0]] = True; post_spikes[self.group1_indices[1]] = True
         hinted_positive_weight_change = 0.0
         for _ in range(num_updates):
-             model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace; model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
-             model.stdp_handler.pre_trace[pre_spikes] = 1.0; model.stdp_handler.post_trace[post_spikes] = 1.0
-             delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
-             delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
-             delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
-             current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
-             model.stdp_handler.eligibility_traces *= current_gamma; model.stdp_handler.eligibility_traces += delta_eligibility
-             model.weights = model.stdp_handler.update(pre_spikes, post_spikes, model.weights, 0.5, simulated_modulated_reward, hints, 0.1)
-             if _ == num_updates - 1: hinted_positive_weight_change = model.weights[0, 1].item()
+            model.stdp_handler.pre_trace *= model.stdp_handler.decay_trace; model.stdp_handler.post_trace *= model.stdp_handler.decay_trace
+            model.stdp_handler.pre_trace[pre_spikes] = 1.0; model.stdp_handler.post_trace[post_spikes] = 1.0
+            delta_eligibility_pot = model.stdp_handler.a_plus * model.stdp_handler.pre_trace.unsqueeze(1) * post_spikes.unsqueeze(0).float()
+            delta_eligibility_dep = -model.stdp_handler.a_minus * model.stdp_handler.post_trace.unsqueeze(0) * pre_spikes.unsqueeze(1).float()
+            delta_eligibility = delta_eligibility_pot + delta_eligibility_dep
+            current_gamma = model.stdp_handler._calculate_gamma(plv=0.5)
+            model.stdp_handler.eligibility_traces *= current_gamma; model.stdp_handler.eligibility_traces += delta_eligibility
+            model.weights = model.stdp_handler.update(
+                pre_spikes, post_spikes, model.weights, 0.5,
+                total_reward=simulated_modulated_reward,
+                hints=hints, hint_factor=0.1)
+            if _ == num_updates - 1: hinted_positive_weight_change = model.weights[0, 1].item()
 
         self.assertGreater(hinted_positive_weight_change, baseline_weight_change * 1.1, # Expect hint to boost potentiation
                            "Weight [0,1] (positive hint) was not significantly greater than baseline [6,7].")

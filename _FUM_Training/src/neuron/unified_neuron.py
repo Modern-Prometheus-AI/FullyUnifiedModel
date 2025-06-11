@@ -438,10 +438,10 @@ class UnifiedNeuronModel:
             base_eta = getattr(self.stdp_handler, 'eta', 0.01) # Get base eta or default
             eta_effective = base_eta * (1.0 + mod_factor)
 
-            # Calculate the final reward signal to pass to the STDP update rule
+            # Calculate the final reward value to pass to the STDP update rule
             # Rule: Δw = eta_effective * total_reward * eligibility_trace
-            # The handler's update likely implements: Δw = reward_signal * eligibility_trace
-            # So, we pass reward_signal = eta_effective * total_reward
+            # The handler's update likely implements: Δw = total_reward * eligibility_trace
+            # So, we compute modulated_reward_signal = eta_effective * total_reward
             modulated_reward_signal = eta_effective * total_reward
 
             self.weights = self.stdp_handler.update(
@@ -449,7 +449,7 @@ class UnifiedNeuronModel:
                 post_spikes_t=post_spikes_t,
                 weights=self.weights,
                 plv=plv,
-                reward_signal=modulated_reward_signal, # Pass the combined modulated signal
+                total_reward=modulated_reward_signal,  # Pass the combined modulated reward
                 hints=hints, # Pass hints
                 hint_factor=hint_factor # Pass hint_factor
             )
