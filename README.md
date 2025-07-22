@@ -1,4 +1,13 @@
 # Fully Unified Model (FUM)
+## Current Status: 
+- Undergoing validation, Phase 1 Random Seed Sprinkling has been validated
+- The documentation is going through an overhaul
+- The documented theory for logarithmic scaling has officially been achieved.
+- The Fully Unified Model has been proven to solve procedurally generated mazes with a 100 neuron network, while seeking a required number of resources, and avoiding hazards and predators, with zero data or examples, using only 12kb of memory. It is blazing fast.
+- The model is created with a semi-random neural net which quickly stabilizes itself for optimal neuron pathways.
+- It successfully fine tunes and adjusts it's own weights during runtime to achieve the reward through the self improvement engine.
+- The model is now capable of introspective though using an Emergent Hierachical Synaptic Probe, which cleverly combines a sparse search algorith which transitions into a dense squareform array when the resolution of the search gets low enough. This allows the model to rapidly access new or remembered solutions to problems with a high level of granularity.
+- Phase 2 Tandem Complexity Scaling has started and so far the results are looking very promising.
 
 ## Overview
 
