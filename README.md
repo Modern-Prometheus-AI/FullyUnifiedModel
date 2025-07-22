@@ -3,6 +3,7 @@
 - Undergoing validation, Phase 1 Random Seed Sprinkling has been validated.
 - The documentation is going through an overhaul.
 - The documented theory for logarithmic scaling has officially been achieved.
+- Almost all components used in the FUM have been given new nomenclature considering the significant differences with traditional SNNs, LLMs, and GNNs.
 - The Fully Unified Model has been proven to solve procedurally generated mazes with a 100 neuron network, while seeking a required number of resources, and avoiding hazards and predators, with zero data or examples, using only 12kb of memory. It is blazing fast.
 - The model is created with a semi-random neural net which quickly stabilizes itself for optimal neuron pathways.
 - It successfully fine tunes and adjusts it's own weights during runtime to achieve the reward through the self improvement engine.
