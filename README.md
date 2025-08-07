@@ -1,5 +1,8 @@
 # Fully Unified Model (FUM)
-## Current Status: 
+## Current Status:
+Please visit this repository for a massive update - https://github.com/justinlietz93/early_FUM_tests
+
+## Prior Status: 
 - Undergoing validation, Phase 1 Random Seed Sprinkling has been validated.
 - The documentation is going through an overhaul.
 - The documented theory for logarithmic scaling has officially been achieved.
